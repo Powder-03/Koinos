@@ -8,6 +8,7 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from src.infrastructure.mcp.server import add_expense, search_expenses, update_expense, delete_expense
 from src.application.agent.state import AgentState
 from src.infrastructure.database.connection import DATABASE_URL
+from src.core.config import settings
 
 # Wrap the FastMCP functions natively as LangChain tools, or assume mcp.export() handles it.
 # We will use the standalone functions directly as langchain tools for the graph execution here.
@@ -36,7 +37,10 @@ async def lc_delete_expense(expense_id: int) -> str:
 tools_list = [lc_add_expense, lc_search_expenses, lc_update_expense, lc_delete_expense]
 tool_node = ToolNode(tools_list)
 
-llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0)
+llm = ChatGroq(
+    model=settings.llm_model_name, 
+    temperature=settings.llm_temperature
+)
 llm_with_tools = llm.bind_tools(tools_list)
 
 system_prompt = SystemMessage(

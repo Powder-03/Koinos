@@ -8,13 +8,13 @@ class ExpenseRepository(ABC):
         pass
 
     @abstractmethod
-    async def search(self, **kwargs) -> List[Expense]:
+    async def search(self, user_id: str, **kwargs) -> List[Expense]:
         pass
 
     @abstractmethod
-    async def update(self, expense_id: int, expense_data: dict) -> Optional[Expense]:
+    async def update(self, expense_id: int, user_id: str, expense_data: dict) -> Optional[Expense]:
         pass
 
     @abstractmethod
-    async def delete(self, expense_id: int) -> bool:
+    async def delete(self, expense_id: int, user_id: str) -> bool:
         pass

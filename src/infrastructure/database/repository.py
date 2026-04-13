@@ -12,6 +12,7 @@ class PostgresExpenseRepository(ExpenseRepository):
     def _to_domain(self, orm_model: ExpenseORM) -> Expense:
         return Expense(
             id=orm_model.id,
+            user_id=orm_model.user_id,
             amount=orm_model.amount,
             category=orm_model.category,
             description=orm_model.description,
@@ -20,6 +21,7 @@ class PostgresExpenseRepository(ExpenseRepository):
 
     async def add(self, expense: Expense) -> Expense:
         orm_expense = ExpenseORM(
+            user_id=expense.user_id,
             amount=expense.amount,
             category=expense.category,
             description=expense.description,
@@ -30,33 +32,38 @@ class PostgresExpenseRepository(ExpenseRepository):
         await self.session.refresh(orm_expense)
         return self._to_domain(orm_expense)
 
-    async def search(self, **kwargs) -> List[Expense]:
-        stmt = select(ExpenseORM)
+    async def search(self, user_id: str, **kwargs) -> List[Expense]:
+        stmt = select(ExpenseORM).where(ExpenseORM.user_id == user_id)
         for key, value in kwargs.items():
             if hasattr(ExpenseORM, key) and value is not None:
                 stmt = stmt.where(getattr(ExpenseORM, key) == value)
-        
+
         result = await self.session.execute(stmt)
         orm_expenses = result.scalars().all()
         return [self._to_domain(e) for e in orm_expenses]
 
-    async def update(self, expense_id: int, expense_data: dict) -> Optional[Expense]:
+    async def update(self, expense_id: int, user_id: str, expense_data: dict) -> Optional[Expense]:
         stmt = (
             update(ExpenseORM)
             .where(ExpenseORM.id == expense_id)
+            .where(ExpenseORM.user_id == user_id)
             .values(**expense_data)
             .returning(ExpenseORM)
         )
         result = await self.session.execute(stmt)
         updated_orm = result.scalar_one_or_none()
         await self.session.commit()
-        
+
         if updated_orm:
             return self._to_domain(updated_orm)
         return None
 
-    async def delete(self, expense_id: int) -> bool:
-        stmt = delete(ExpenseORM).where(ExpenseORM.id == expense_id)
+    async def delete(self, expense_id: int, user_id: str) -> bool:
+        stmt = (
+            delete(ExpenseORM)
+            .where(ExpenseORM.id == expense_id)
+            .where(ExpenseORM.user_id == user_id)
+        )
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.rowcount > 0

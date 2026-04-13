@@ -9,6 +9,7 @@ class ExpenseORM(Base):
     __tablename__ = "expenses"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    user_id: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     category: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -9,3 +9,7 @@ fastmcp
 pydantic
 pydantic-settings
 psycopg[binary,pool]
+firebase-admin
+langchain-mcp-adapters
+mcp
+httpx-sse

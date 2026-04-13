@@ -9,20 +9,21 @@ mcp = FastMCP("ExpenseTrackerDualMode")
 
 @mcp.tool()
 async def add_expense(
+    user_id: str,
     amount: float, 
     category: str, 
     expense_date: str, 
     description: Optional[str] = None
 ) -> str:
-    """Log or add a new expense."""
+    """Log or add a new expense for a specific user."""
     try:
-        # Validate category and date
         cat_enum = ExpenseCategory(category.capitalize())
         parsed_date = date.fromisoformat(expense_date)
         
         async with async_session_maker() as session:
             repo = PostgresExpenseRepository(session)
             expense = Expense(
+                user_id=user_id,
                 amount=amount, 
                 category=cat_enum, 
                 date=parsed_date, 
@@ -37,12 +38,13 @@ async def add_expense(
 
 @mcp.tool()
 async def search_expenses(
+    user_id: str,
     category: Optional[str] = None, 
     expense_date: Optional[str] = None, 
     amount: Optional[float] = None
 ) -> str:
     """
-    Search the database for expenses. 
+    Search the database for a specific user's expenses. 
     Always use this to confirm an expense ID before updating or deleting.
     """
     kwargs = {}
@@ -56,7 +58,7 @@ async def search_expenses(
 
         async with async_session_maker() as session:
             repo = PostgresExpenseRepository(session)
-            expenses = await repo.search(**kwargs)
+            expenses = await repo.search(user_id=user_id, **kwargs)
             
             if not expenses:
                 return "No expenses found matching those criteria."
@@ -72,6 +74,7 @@ async def search_expenses(
 
 @mcp.tool()
 async def update_expense(
+    user_id: str,
     expense_id: int, 
     amount: Optional[float] = None, 
     category: Optional[str] = None, 
@@ -95,7 +98,7 @@ async def update_expense(
 
         async with async_session_maker() as session:
             repo = PostgresExpenseRepository(session)
-            updated_expense = await repo.update(expense_id, update_data)
+            updated_expense = await repo.update(expense_id, user_id, update_data)
             
             if updated_expense:
                 return f"Successfully updated expense ID {expense_id}."
@@ -104,11 +107,11 @@ async def update_expense(
          return f"Validation error: {str(e)}."
 
 @mcp.tool()
-async def delete_expense(expense_id: int) -> str:
+async def delete_expense(user_id: str, expense_id: int) -> str:
     """Delete an expense. You MUST know the exact ID."""
     async with async_session_maker() as session:
         repo = PostgresExpenseRepository(session)
-        success = await repo.delete(expense_id)
+        success = await repo.delete(expense_id, user_id)
         if success:
             return f"Successfully deleted expense ID {expense_id}."
         return f"Error: Expense with ID {expense_id} not found."

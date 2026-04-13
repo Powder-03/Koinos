@@ -17,9 +17,13 @@ services:
     environment:
       - DATABASE_URL=postgresql+asyncpg://koinos:password@db:5432/koinos_db
       - GROQ_API_KEY=${GROQ_API_KEY}
+      - LLM_MODEL_NAME=${LLM_MODEL_NAME}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccountKey.json
     depends_on:
       - db
     volumes:
       - .:/app
+
 volumes:
   db_data:

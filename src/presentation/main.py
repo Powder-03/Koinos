@@ -33,8 +33,8 @@ app = FastAPI(title="Koinos Expense Tracker", lifespan=lifespan)
 app.include_router(manual_router)
 app.include_router(voice_router)
 
-@app.get("/")
-@app.get("/health")
+@app.api_route("/", methods=["GET", "HEAD"])
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     """Lightweight health check — point your uptime bot here to prevent cold starts."""
     return {"status": "healthy", "service": "koinos-api"}

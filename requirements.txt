@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+asyncpg
+langgraph
+langgraph-checkpoint-postgres
+langchain-groq
+fastmcp
+pydantic
+pydantic-settings
+psycopg[binary,pool]
+firebase-admin
+langchain-mcp-adapters
+mcp
+httpx-sse

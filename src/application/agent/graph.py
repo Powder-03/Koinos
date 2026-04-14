@@ -15,10 +15,12 @@ from src.infrastructure.database.connection import DATABASE_URL
 # Render:    https://koinos-mcp.onrender.com/sse
 MCP_SERVER_URL = os.environ.get("MCP_SERVER_URL", "http://localhost:8001/sse")
 
-system_prompt = SystemMessage(
-    content="You are a dual-mode assistant. Always search the database via tools to "
-            "confirm an ID before updating/deleting. If uncertain, ask for clarification. "
-            "IMPORTANT: You do NOT need to provide a user_id to any tool — it is handled automatically."
+SYSTEM_PROMPT_TEMPLATE = (
+    "You are a dual-mode expense tracking assistant. "
+    "Always search the database via tools to confirm an ID before updating or deleting. "
+    "If uncertain, ask for clarification.\n\n"
+    "CRITICAL: For EVERY tool call, you MUST pass user_id=\"{user_id}\" as the first argument. "
+    "This is a verified identity. Never omit it, never change it, never invent one."
 )
 
 
@@ -51,11 +53,13 @@ async def get_graph():
     llm_with_tools = llm.bind_tools(tools_list)
     tool_node = ToolNode(tools_list)
 
-    # 3. Define the chatbot node
+    # 3. Define the chatbot node — injects user_id into system prompt
     async def chatbot(state: AgentState):
-        messages = state["messages"]
-        if not messages or not isinstance(messages[0], SystemMessage):
-            messages = [system_prompt] + messages
+        user_id = state.get("user_id", "unknown")
+        system_msg = SystemMessage(
+            content=SYSTEM_PROMPT_TEMPLATE.format(user_id=user_id)
+        )
+        messages = [system_msg] + state["messages"]
         response = await llm_with_tools.ainvoke(messages)
         return {"messages": [response]}
 

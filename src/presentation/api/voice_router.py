@@ -47,12 +47,15 @@ async def process_voice_command(
     try:
         graph = await _get_or_build_graph()
 
-        # Use the verified Firebase UID as the thread_id for both
-        # conversation memory AND secure tool execution
+        # Use the verified Firebase UID as the thread_id for memory
+        # AND inject it into state so the LLM passes it to remote MCP tools
         config = {"configurable": {"thread_id": user_id}}
 
         input_message = HumanMessage(content=request.message)
-        result = await graph.ainvoke({"messages": [input_message]}, config)
+        result = await graph.ainvoke(
+            {"messages": [input_message], "user_id": user_id},
+            config,
+        )
 
         ai_response = result["messages"][-1].content
 

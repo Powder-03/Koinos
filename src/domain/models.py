@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import date as date_type
 from enum import Enum
@@ -27,6 +27,13 @@ class ExpenseCreate(BaseModel):
     category: ExpenseCategory = Field(..., description="Category of the expense (e.g., Food, Transport)")
     description: Optional[str] = Field(None, description="Detailed description of the expense")
     date: date_type = Field(..., description="Date of the expense")
+
+    @field_validator("date")
+    @classmethod
+    def date_not_in_future(cls, v: date_type) -> date_type:
+        if v > date_type.today():
+            raise ValueError("Expense date cannot be in the future")
+        return v
 
 class ExpenseResponse(BaseModel):
     """What the client receives — never exposes user_id."""

@@ -8,16 +8,19 @@ from src.domain.models import Expense, ExpenseCreate, ExpenseResponse
 
 router = APIRouter(prefix="/api/manual", tags=["Manual Mode"])
 
-@router.post("/", response_model=ExpenseResponse)
+@router.post("/", status_code=201)
 async def create_manual_expense(
     expense_in: ExpenseCreate,
     user_id: str = Depends(verify_firebase_token),
     session: AsyncSession = Depends(get_db_session)
 ):
-    # Build internal model with the verified user_id from token
     expense = Expense(user_id=user_id, **expense_in.model_dump())
     repo = PostgresExpenseRepository(session)
-    return await repo.add(expense)
+    saved = await repo.add(expense)
+    return {
+        "message": f"₹{saved.amount:.0f} added in {saved.category} for {saved.date}",
+        "id": saved.id
+    }
 
 @router.get("/", response_model=List[ExpenseResponse])
 async def get_manual_expenses(
@@ -31,9 +34,9 @@ async def get_manual_expenses(
         kwargs["category"] = category
     return await repo.search(user_id=user_id, **kwargs)
 
-@router.put("/{expense_id}", response_model=ExpenseResponse)
+@router.put("/{expense_id}")
 async def update_manual_expense(
-    expense_id: int,
+    expense_id: str,
     expense_in: ExpenseCreate,
     user_id: str = Depends(verify_firebase_token),
     session: AsyncSession = Depends(get_db_session)
@@ -43,11 +46,14 @@ async def update_manual_expense(
     updated = await repo.update(expense_id, user_id, expense_data)
     if not updated:
         raise HTTPException(status_code=404, detail="Expense not found")
-    return updated
+    return {
+        "message": f"Expense updated — ₹{updated.amount:.0f} in {updated.category} for {updated.date}",
+        "id": updated.id
+    }
 
 @router.delete("/{expense_id}")
 async def delete_manual_expense(
-    expense_id: int,
+    expense_id: str,
     user_id: str = Depends(verify_firebase_token),
     session: AsyncSession = Depends(get_db_session)
 ):

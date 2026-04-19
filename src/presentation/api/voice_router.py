@@ -1,6 +1,6 @@
 import logging
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage
 from src.application.agent.graph import get_graph
 from src.infrastructure.auth.firebase import verify_firebase_token
@@ -13,8 +13,7 @@ router = APIRouter(prefix="/api/voice", tags=["Voice Mode"])
 _cached_graph = None
 
 class VoiceRequest(BaseModel):
-    message: str
-    # user_id removed — we now trust the Firebase token, not the client body
+    message: str = Field(..., min_length=1, max_length=100)
 
 
 async def _get_or_build_graph():

@@ -1,4 +1,5 @@
 from typing import List, Optional
+from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
 from src.domain.models import Expense
@@ -11,7 +12,7 @@ class PostgresExpenseRepository(ExpenseRepository):
 
     def _to_domain(self, orm_model: ExpenseORM) -> Expense:
         return Expense(
-            id=orm_model.id,
+            id=str(orm_model.id),
             user_id=orm_model.user_id,
             amount=orm_model.amount,
             category=orm_model.category,
@@ -42,10 +43,10 @@ class PostgresExpenseRepository(ExpenseRepository):
         orm_expenses = result.scalars().all()
         return [self._to_domain(e) for e in orm_expenses]
 
-    async def update(self, expense_id: int, user_id: str, expense_data: dict) -> Optional[Expense]:
+    async def update(self, expense_id: str, user_id: str, expense_data: dict) -> Optional[Expense]:
         stmt = (
             update(ExpenseORM)
-            .where(ExpenseORM.id == expense_id)
+            .where(ExpenseORM.id == UUID(expense_id))
             .where(ExpenseORM.user_id == user_id)
             .values(**expense_data)
             .returning(ExpenseORM)
@@ -58,12 +59,13 @@ class PostgresExpenseRepository(ExpenseRepository):
             return self._to_domain(updated_orm)
         return None
 
-    async def delete(self, expense_id: int, user_id: str) -> bool:
+    async def delete(self, expense_id: str, user_id: str) -> bool:
         stmt = (
             delete(ExpenseORM)
-            .where(ExpenseORM.id == expense_id)
+            .where(ExpenseORM.id == UUID(expense_id))
             .where(ExpenseORM.user_id == user_id)
         )
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.rowcount > 0
+

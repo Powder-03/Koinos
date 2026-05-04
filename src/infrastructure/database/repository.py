@@ -34,7 +34,7 @@ class PostgresExpenseRepository(ExpenseRepository):
         return self._to_domain(orm_expense)
 
     async def search(self, user_id: str, **kwargs) -> List[Expense]:
-        stmt = select(ExpenseORM).where(ExpenseORM.user_id == user_id)
+        stmt = select(ExpenseORM).where(ExpenseORM.user_id == user_id).order_by(ExpenseORM.date.desc())
         for key, value in kwargs.items():
             if hasattr(ExpenseORM, key) and value is not None:
                 stmt = stmt.where(getattr(ExpenseORM, key) == value)
